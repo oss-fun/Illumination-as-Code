@@ -1,9 +1,7 @@
 use rayon::prelude::*;
 use rayon::ThreadPoolBuilder;
-use std::env;
 
-pub fn parse_args() -> (usize, usize) {
-    let args: Vec<String> = env::args().collect();
+pub fn parse_args(args: &[String]) -> (usize, usize) {
     let num_threads: usize = args[1].parse().expect("error");
     let color: usize = args[2].parse().expect("error");
     (num_threads, color)
@@ -34,10 +32,7 @@ mod tests {
     #[test]
     fn test_parse_args() {
         let args: Vec<String> = vec!["program".to_string(), "4".to_string(), "1".to_string()];
-        env::set_var("CARGO_BIN_EXE_test_program", &args[0]);
-        env::set_var("ARGS1", &args[1]);
-        env::set_var("ARGS2", &args[2]);
-        let parsed_args = parse_args();
+        let parsed_args = parse_args(&args);
         assert_eq!(parsed_args, (4, 1));
     }
     #[test]

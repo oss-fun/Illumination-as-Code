@@ -1,8 +1,10 @@
 use compute_pi::{compute_pi, init_thread_pool, parse_args};
+use std::env;
 use std::io::{self, Write};
 
 fn main() {
-    let (num_threads, color) = parse_args();
+    let args: Vec<String> = env::args().collect();
+    let (num_threads, color) = parse_args(&args);
 
     init_thread_pool(num_threads);
 
