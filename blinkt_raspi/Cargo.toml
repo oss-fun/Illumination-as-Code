@@ -1,0 +1,8 @@
+[package]
+name = "blinkt_raspi"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+blinkt = "0.7.1"
+rand = "0.8.5"
