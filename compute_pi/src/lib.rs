@@ -1,9 +1,10 @@
 use rayon::prelude::*;
 use rayon::ThreadPoolBuilder;
+use reqwest::Client;
 
-pub fn parse_args(args: &[String]) -> (usize, usize) {
+pub fn parse_args(args: &[String]) -> (usize, &str) {
     let num_threads: usize = args[1].parse().expect("error");
-    let color: usize = args[2].parse().expect("error");
+    let color: &str = &args[2];
     (num_threads, color)
 }
 
@@ -26,14 +27,37 @@ pub fn compute_pi(num_rects: i64, width: f64) -> f64 {
 
     width * sum
 }
+
+pub async fn send_chroma_base(url: &str, color: &str) -> Result<(), reqwest::Error> {
+    // サーバにリクエストを送信
+    let client = Client::new();
+
+    match client
+        .post(url.to_string() + "/receive")
+        .body(color.to_string())
+        .send()
+        .await
+    {
+        Ok(res) => {
+            let status = res.status();
+            let body = res.text().await.unwrap();
+            println!("Status: [{}], Body: [{}]", status, body);
+        }
+        Err(err) => {
+            println!("Request error: {}", err);
+        }
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     #[test]
     fn test_parse_args() {
-        let args: Vec<String> = vec!["program".to_string(), "4".to_string(), "1".to_string()];
+        let args: Vec<String> = vec!["program".to_string(), "4".to_string(), "R".to_string()];
         let parsed_args = parse_args(&args);
-        assert_eq!(parsed_args, (4, 1));
+        assert_eq!(parsed_args, (4, "R"));
     }
     #[test]
     fn test_init_thread_pool() {
