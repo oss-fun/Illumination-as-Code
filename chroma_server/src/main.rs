@@ -32,9 +32,9 @@ async fn start_receiving(state: web::Data<AppState>) -> impl Responder {
     actix_rt::spawn(async move {
         let start_time = std::time::Instant::now();
 
-        while start_time.elapsed() < Duration::new(10, 0) {
+        while start_time.elapsed() < Duration::new(15, 0) {
             // 1秒ごとにデータ受信をチェック
-            sleep(Duration::from_secs(1)).await;
+            sleep(Duration::from_nanos(100)).await;
         }
 
         // 10秒経過後に受信状態をオフにする
@@ -45,12 +45,39 @@ async fn start_receiving(state: web::Data<AppState>) -> impl Responder {
 }
 
 // get raspi from this server
-async fn get_chroma() -> impl Responder {
+async fn get_chroma(state: web::Data<AppState>) -> impl Responder {
+    let data = state.data.lock().unwrap();
+    println!("{:?}", *data);
+    // 1: 4,2: 8,4:12
+    let r_count: usize = data.match_indices("R").count();
+    let g_count: usize = data.match_indices("G").count();
+    let b_count: usize = data.match_indices("B").count();
+    println!("r:{} g:{} b:{}", r_count, g_count, b_count);
+    let (red, green, blue) = parse_count_to_chroma(r_count, g_count, b_count);
     HttpResponse::Ok().json(Chroma {
-        red: 255,
-        green: 0,
-        blue: 0,
+        red: red,
+        green: green,
+        blue: blue,
     })
+}
+
+fn parse_count_to_chroma(r_count: usize, g_count: usize, b_count: usize) -> (u8, u8, u8) {
+    let red: u8 = if (r_count / 5 * 85) < 255 {
+        (r_count / 5 * 85) as u8
+    } else {
+        255
+    };
+    let green: u8 = if (g_count / 5 * 85) < 255 {
+        (g_count / 5 * 85) as u8
+    } else {
+        255
+    };
+    let blue: u8 = if (b_count / 5 * 85) < 255 {
+        (b_count / 5 * 85) as u8
+    } else {
+        255
+    };
+    (red, green, blue)
 }
 
 // post vm to this server
