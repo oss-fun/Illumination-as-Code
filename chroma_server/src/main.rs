@@ -1,3 +1,5 @@
+use chroma_server::parse_count_to_chroma;
+
 use actix_rt::time::sleep;
 use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 use serde::{Deserialize, Serialize};
@@ -18,66 +20,70 @@ struct Chroma {
 }
 
 // post raspi to this server
-async fn start_receiving(state: web::Data<AppState>) -> impl Responder {
-    // 内部状態のクリア
-    {
-        let mut data = state.data.lock().unwrap();
-        data.clear();
-        let mut receiving = state.receiving.lock().unwrap();
-        *receiving = true; // 受信状態をオンにする
-    }
+async fn start_receiving(state: web::Data<AppState>, body: String) -> impl Responder {
+    match body.trim().parse::<u64>() {
+        Ok(time) => {
+            // 内部状態のクリア
+            {
+                let mut data = state.data.lock().unwrap();
+                data.clear();
+                let mut receiving = state.receiving.lock().unwrap();
+                *receiving = true; // 受信状態をオンにする
+            }
 
-    let data = state.data.clone();
-    let receiving = state.receiving.clone();
-    actix_rt::spawn(async move {
-        let start_time = std::time::Instant::now();
+            let _data = state.data.clone();
+            let receiving = state.receiving.clone();
+            actix_rt::spawn(async move {
+                let start_time = std::time::Instant::now();
 
-        while start_time.elapsed() < Duration::new(15, 0) {
-            // 1秒ごとにデータ受信をチェック
-            sleep(Duration::from_nanos(100)).await;
+                while start_time.elapsed() < Duration::new(time, 0) {
+                    // 1秒ごとにデータ受信をチェック
+                    sleep(Duration::from_nanos(100)).await;
+                }
+
+                // 10秒経過後に受信状態をオフにす
+                let mut receiving = receiving.lock().unwrap();
+                *receiving = false;
+            });
+            HttpResponse::Ok().body(format!(
+                "Started receiving data for {} seconds",
+                time.to_string()
+            ))
         }
-
-        // 10秒経過後に受信状態をオフにする
-        let mut receiving = receiving.lock().unwrap();
-        *receiving = false;
-    });
-    HttpResponse::Ok().body("Started receiving data for 10 seconds")
+        Err(e) => {
+            println!("Error: {}", e);
+            return HttpResponse::BadRequest().body("Invalid time: must be a number");
+        }
+    }
 }
 
 // get raspi from this server
-async fn get_chroma(state: web::Data<AppState>) -> impl Responder {
+async fn get_chroma(state: web::Data<AppState>, body: String) -> impl Responder {
     let data = state.data.lock().unwrap();
-    println!("{:?}", *data);
-    // 1: 4,2: 8,4:12
-    let r_count: usize = data.match_indices("R").count();
-    let g_count: usize = data.match_indices("G").count();
-    let b_count: usize = data.match_indices("B").count();
-    println!("r:{} g:{} b:{}", r_count, g_count, b_count);
-    let (red, green, blue) = parse_count_to_chroma(r_count, g_count, b_count);
-    HttpResponse::Ok().json(Chroma {
-        red: red,
-        green: green,
-        blue: blue,
-    })
+
+    println!("{:?}", *data); // log
+
+    match body.trim().parse::<usize>() {
+        Ok(time) => {
+            let red = parse_count_to_chroma(&data, "R", time);
+            let green = parse_count_to_chroma(&data, "G", time);
+            let blue = parse_count_to_chroma(&data, "B", time);
+
+            HttpResponse::Ok().json(Chroma { red, green, blue })
+        }
+        Err(e) => {
+            println!("Error: {}", e);
+            HttpResponse::BadRequest().body("Invalid time: must be a number")
+        }
+    }
 }
 
-fn parse_count_to_chroma(r_count: usize, g_count: usize, b_count: usize) -> (u8, u8, u8) {
-    let red: u8 = if (r_count / 5 * 85) < 255 {
-        (r_count / 5 * 85) as u8
-    } else {
-        255
-    };
-    let green: u8 = if (g_count / 5 * 85) < 255 {
-        (g_count / 5 * 85) as u8
-    } else {
-        255
-    };
-    let blue: u8 = if (b_count / 5 * 85) < 255 {
-        (b_count / 5 * 85) as u8
-    } else {
-        255
-    };
-    (red, green, blue)
+async fn get_chroma_static(_state: web::Data<AppState>, _body: String) -> impl Responder {
+    HttpResponse::Ok().json(Chroma {
+        red: 255,
+        green: 85,
+        blue: 0,
+    })
 }
 
 // post vm to this server
@@ -86,7 +92,6 @@ async fn receive_data(state: web::Data<AppState>, body: String) -> impl Responde
     if *receiving {
         let mut data = state.data.lock().unwrap();
         data.push_str(&body);
-        println!("{:?}", *data);
         HttpResponse::Ok().body("Data received")
     } else {
         HttpResponse::Ok().body("Data ignored: Receiving is off")
@@ -103,9 +108,10 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(data.clone()))
-            .route("/start", web::get().to(start_receiving))
+            .route("/start", web::post().to(start_receiving))
             .route("/receive", web::post().to(receive_data))
-            .route("/get-chroma", web::get().to(get_chroma))
+            .route("/get-chroma", web::post().to(get_chroma))
+            .route("/get-chroma-static", web::post().to(get_chroma_static))
     })
     .bind("127.0.0.1:8080")?
     .run()
