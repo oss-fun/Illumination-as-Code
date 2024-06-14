@@ -2,8 +2,9 @@
 variable "hostname" { default = "simple" }
 variable "domain" { default = "example.com" }
 variable "memoryMB" { default = 1024*1 }
-variable "cpu" { default = 2}
-variable "machine_num" { default = 4}
+#mashine_numは立ち上げるマシンの数
+variable "machine_num" { default = 3}
+variable "ip" { default  = "192.168.122.20"}
 # 下記terraform {}内は追記by西
 terraform {
 	required_version = ">= 0.13"
@@ -55,13 +56,15 @@ resource "libvirt_domain" "domain-ubuntu" {
   count = var.machine_num
   name = "${format("${var.hostname}%02d", count.index + 1)}"
   memory = var.memoryMB
-  vcpu = var.cpu
+  vcpu = count.index + 1#CPU数はマシンごとに一つずつ上がる1
 
   disk {
        volume_id = libvirt_volume.os_image[count.index].id
   }
   network_interface {
        network_name = "default"
+       wait_for_lease = true
+       addresses = ["${format("192.168.122.20%d", count.index)}"]
   }
 
   cloudinit = libvirt_cloudinit_disk.commoninit.id
@@ -79,6 +82,21 @@ resource "libvirt_domain" "domain-ubuntu" {
     type = "spice"
     listen_type = "address"
     autoport = "true"
+  }
+
+ provisioner "remote-exec" {
+      connection {
+    type        = "ssh"
+    user        = "ubuntu"
+    private_key = file("id_rsa")
+    host = "${format("192.168.122.20%d", count.index)}"
+}
+    inline = [
+ "cd compute",
+      "chmod 777 script.sh",
+      "chmod 777 compute_pi",
+      "./script.sh",
+    ]
   }
 }
 
