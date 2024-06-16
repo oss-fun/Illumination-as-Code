@@ -1,0 +1,7 @@
+services:
+    rust:
+        build: .
+        tty: true
+        volumes:
+            - ./target:/app/target
+        command: /bin/bash -c "cargo build --release"

@@ -1,10 +1,9 @@
-use actix_rt;
 use compute_pi::{compute_pi, init_thread_pool, parse_args, send_chroma_base};
 use std::env;
 use std::io::{self, Write};
 
-#[actix_rt::main]
-async fn main() {
+#[actix_web::main]
+async fn main() -> Result<(), reqwest::Error> {
     // args
     let args: Vec<String> = env::args().collect();
     let (num_threads, color) = parse_args(&args);
