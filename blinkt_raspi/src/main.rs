@@ -5,7 +5,7 @@ use std::time::Duration;
 use blinkt_raspi::set_chroma_static;
 
 use blinkt::Blinkt;
-#[actix_web::main]
+
 async fn main() -> Result<(), Box<dyn Error>> {
     let mut blinkt = Blinkt::new()?;
     let url = "http://127.00.1:8080";
