@@ -1,0 +1,3 @@
+[build]
+[target.'cfg(target_os = "linux"']
+rustflags = ["-c", "target-feature=+crt-static"]
