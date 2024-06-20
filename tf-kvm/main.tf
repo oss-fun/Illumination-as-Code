@@ -92,32 +92,33 @@ resource "libvirt_domain" "domain-ubuntu" {
     connection {
       type        = "ssh"
       user        = "ubuntu"
-      private_key = file("id_rsa")
-      host        = "${format("${var.ip}%d", count.index)}"
+      private_key = file("id_ed25519")
+      host        = self.network_interface[0].addresses[0]
     }
   }
+
   provisioner "file" {
-    source      = "compute/pi.service"
-    destination = "/tmp/pi.service"
+    source      = format("compute/pi%d.service", count.index + 1)
+    destination = format("/tmp/pi%d.service", count.index + 1)
     connection {
       type        = "ssh"
       user        = "ubuntu"
-      private_key = file("id_rsa")
-      host        = "${format("${var.ip}%d", count.index)}"
+      private_key = file("id_ed25519")
+      host        = self.network_interface[0].addresses[0]
     }
   }
   provisioner "remote-exec" {
     inline = [
-      "sudo mv /tmp/pi.service /etc/systemd/system/pi.service",
+      "${format("sudo mv /tmp/pi%d.service /etc/systemd/system/pi%d.service", count.index + 1, count.index + 1)}",
       "sudo chmod 777 /tmp/compute_pi",
       "sudo systemctl daemon-reload",
-      "sudo systemctl start pi.service",
+      "${format("sudo systemctl start pi%d.service", count.index + 1)}",
     ]
     connection {
       type        = "ssh"
       user        = "ubuntu"
-      private_key = file("id_rsa")
-      host        = "${format("${var.ip}%d", count.index)}"
+      private_key = file("id_ed25519")
+      host        = self.network_interface[0].addresses[0]
     }
   }
 }
@@ -125,5 +126,5 @@ resource "libvirt_domain" "domain-ubuntu" {
 
 output "ips" {
   # show IP, run 'terraform refresh' if not populated
-  value = libvirt_domain.domain-ubuntu.*.network_interface.0.addresses
+  value = [for instance in libvirt_domain.domain-ubuntu : instance.network_interface[0].addresses[0]]
 }

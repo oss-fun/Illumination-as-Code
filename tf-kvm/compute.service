@@ -1,8 +1,0 @@
-[Unit]
-Description=compute-pi
-
-[Service]
-Type=simple
-ExecStart=/home/ubuntu/compute/script.sh
-ExecStop=/bin/kill -WINCH ${MAINPID}
-

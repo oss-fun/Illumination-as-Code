@@ -1,0 +1,12 @@
+[Unit]
+Description=compute-pi
+After=network.target
+
+[Service]
+Type=compute_pi
+ExecStart=/tmp/compute_pi 4 B &
+ExecStop=/bin/kill -WINCH ${MAINPID}
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

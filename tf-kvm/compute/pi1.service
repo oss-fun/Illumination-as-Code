@@ -3,7 +3,7 @@ Description=compute-pi
 After=network.target
 
 [Service]
-Type=simple
+Type=compute_pi
 ExecStart=/tmp/compute_pi 4 R &
 ExecStop=/bin/kill -WINCH ${MAINPID}
 Restart=always
