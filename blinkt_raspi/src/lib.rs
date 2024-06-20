@@ -120,3 +120,33 @@ fn parse_chroma(input: String) -> Result<u8, Box<dyn Error>> {
         _ => Err("Please Input number 0~3".into()),
     }
 }
+
+pub async fn vm_up(chroma_answer: &Chroma, url: &str) -> Result<String, reqwest::Error> {
+    let client = Client::new();
+    let res = client
+        .post(url.to_string() + "/vm_up")
+        .json(&chroma_answer)
+        .send()
+        .await?;
+    Ok(res.text().await?)
+}
+
+pub async fn start_receive_data(compute_time: usize, url: &str) -> Result<String, reqwest::Error> {
+    let client = Client::new();
+    let res = client
+        .post(url.to_string() + "/start")
+        .body(compute_time.to_string())
+        .send()
+        .await?;
+    Ok(res.text().await?)
+}
+
+pub async fn get_chroma(compute_time: usize, url: &str) -> Result<Chroma, reqwest::Error> {
+    let client = Client::new();
+    let res = client
+        .post(url.to_string() + "/get-chroma")
+        .body(compute_time.to_string())
+        .send()
+        .await?;
+    Ok(res.json().await?)
+}

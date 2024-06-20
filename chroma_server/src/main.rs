@@ -98,6 +98,15 @@ async fn receive_data(state: web::Data<AppState>, body: String) -> impl Responde
     }
 }
 
+// test endpoint
+async fn vm_up(_state: web::Data<AppState>, body: String) -> impl Responder {
+    if body.trim().parse().unwrap() {
+        HttpResponse::Ok().body("Success!")
+    } else {
+        HttpResponse::BadRequest().body("Failed!")
+    }
+}
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let data = AppState {
@@ -112,6 +121,7 @@ async fn main() -> std::io::Result<()> {
             .route("/receive", web::post().to(receive_data))
             .route("/get-chroma", web::post().to(get_chroma))
             .route("/get-chroma-static", web::post().to(get_chroma_static))
+            .route("/vm_up", web::post().to(vm_up))
     })
     .bind("127.0.0.1:8080")?
     .run()
