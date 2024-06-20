@@ -1,5 +1,0 @@
-cargo build --release --target=aarch64-unknown-linux-gnu
-
-scp -i ~/.ssh/tfdemo/tfdemo_ed25519 ./target/aarch64-unknown-linux-gnu/release/blinkt_raspi pi@10.6.18.124:/home/pi
-
-ssh -i ~/.ssh/tfdemo/tfdemo_ed25519 pi@10.6.18.124 './blinkt_raspi'
