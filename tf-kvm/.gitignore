@@ -4,3 +4,5 @@ terraform.tfstate.backup
 .terraform.lock.hcl
 id_ed25519
 id_ed25519.pub
+
+/compute/compute_pi
