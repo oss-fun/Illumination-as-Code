@@ -1,4 +1,4 @@
-variable "hostname" { default = ["tf-r","tf-g","tf-b"] }
+variable "hostname" { default = "tf-vm" }
 variable "domain" { default = "illumination-as-code.com" }
 variable "machine_num" { default = 3 }
 variable "cpu" {
@@ -22,7 +22,7 @@ provider "libvirt" {
 
 resource "libvirt_volume" "os_image" {
   count = var.machine_num
-  name   = "${var.hostname[count.index]}-vm-os_image"
+  name   = "${var.hostname}${count.index}-vm-os_image"
   pool   = "default"
   source = "https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img"
   format = "qcow2"
@@ -30,12 +30,12 @@ resource "libvirt_volume" "os_image" {
 
 resource "libvirt_cloudinit_disk" "commoninit" {
   count = var.machine_num
-  name           = "${var.hostname[count.index]}-common-init.iso"
+  name           = "${var.hostname}${count.index}-init.iso"
   pool           = "default"
   user_data      = <<-EOF
   #cloud-config
-  hostname: ${var.hostname[count.index]}
-  fqdn: ${var.hostname[count.index]}.${var.domain}
+  hostname: ${var.hostname}
+  fqdn: ${var.hostname}.${var.domain}
   manage_etc_hosts: true
   users:
     - name: ubuntu
@@ -53,8 +53,6 @@ resource "libvirt_cloudinit_disk" "commoninit" {
     list: |
        ubuntu:linux
     expire: False
-  package_update: false
-  package_upgrade: false
   packages:
    - qemu-guest-agent
   EOF
@@ -74,7 +72,7 @@ resource "libvirt_cloudinit_disk" "commoninit" {
 
 resource "libvirt_domain" "vm" {
   count = var.machine_num
-  name   = var.hostname[count.index]
+  name   = "var.hostname-${count.index+2}"
   memory = 2048
   vcpu   = var.cpu[count.index]
 
@@ -100,5 +98,40 @@ resource "libvirt_domain" "vm" {
     listen_type = "address"
     autoport    = "true"
   }
-}
+  
+  provisioner "file" {
+    source      = "compute/compute_pi"
+    destination = "/tmp/compute_pi"
+    connection {
+      type        = "ssh"
+      user        = "ubuntu"
+      private_key = file("id_ed25519")
+      host        = format("192.168.22.%d", count.index + 2)
+    }
+  }
 
+  provisioner "file" {
+    source      = format("compute/pi%d.service", count.index + 1)
+    destination = format("/tmp/pi%d.service", count.index + 1)
+    connection {
+      type        = "ssh"
+      user        = "ubuntu"
+      private_key = file("id_ed25519")
+      host        = format("192.168.22.%d", count.index + 2)
+    }
+  }
+  provisioner "remote-exec" {
+    inline = [
+      "${format("sudo mv /tmp/pi%d.service /etc/systemd/system/pi%d.service", count.index + 1, count.index + 1)}",
+      "sudo chmod 777 /tmp/compute_pi",
+      "sudo systemctl daemon-reload",
+      "${format("sudo systemctl start pi%d.service", count.index + 1)}",
+    ]
+    connection {
+      type        = "ssh"
+    user        = "ubuntu"
+      private_key = file("id_ed25519")
+      host        = format("192.168.22.%d", count.index + 2)
+    }
+  }
+}
