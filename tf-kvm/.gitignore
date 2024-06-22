@@ -1,5 +1,5 @@
 terraform.tfstate
-terraform.tfsate.backup
+terraform.tfstate.backup
 .terraform
 .terraform.lock.hcl
 id_ed25519
