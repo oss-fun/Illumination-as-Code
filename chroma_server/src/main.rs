@@ -123,7 +123,7 @@ async fn main() -> std::io::Result<()> {
             .route("/get-chroma-static", web::post().to(get_chroma_static))
             .route("/vm_up", web::post().to(vm_up))
     })
-    .bind("127.0.0.1:8080")?
+    .bind("0.0.0.0:8080")?
     .run()
     .await
 }
