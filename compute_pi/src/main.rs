@@ -16,7 +16,7 @@ async fn main() -> Result<(), reqwest::Error> {
     let width: f64 = 1.0 / num_rects as f64;
 
     // test local server
-    let url: &str = "http://127.0.0.1:8080";
+    let url: &str = "http://192.168.22.5:8080";
 
     loop {
         let area: f64 = compute_pi(num_rects, width);
