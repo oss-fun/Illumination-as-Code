@@ -18,6 +18,12 @@ struct Chroma {
     green: u8,
     blue: u8,
 }
+#[derive(Serialize, Deserialize)]
+struct Count {
+    red: usize,
+    green: usize,
+    blue: usize,
+}
 
 // post raspi to this server
 async fn start_receiving(state: web::Data<AppState>, body: String) -> impl Responder {
@@ -33,7 +39,7 @@ async fn start_receiving(state: web::Data<AppState>, body: String) -> impl Respo
 
             let _data = state.data.clone();
             let receiving = state.receiving.clone();
-            actix_rt::spawn(async move {
+            let receive_task = actix_rt::spawn(async move {
                 let start_time = std::time::Instant::now();
 
                 while start_time.elapsed() < Duration::new(time, 0) {
@@ -45,8 +51,11 @@ async fn start_receiving(state: web::Data<AppState>, body: String) -> impl Respo
                 let mut receiving = receiving.lock().unwrap();
                 *receiving = false;
             });
+
+            receive_task.await.unwrap();
+
             HttpResponse::Ok().body(format!(
-                "Started receiving data for {} seconds",
+                "Receiving data for {} seconds is done",
                 time.to_string()
             ))
         }
@@ -69,7 +78,11 @@ async fn get_chroma(state: web::Data<AppState>, body: String) -> impl Responder 
             let green = parse_count_to_chroma(&data, "G", time);
             let blue = parse_count_to_chroma(&data, "B", time);
 
-            HttpResponse::Ok().json(Chroma { red, green, blue })
+            HttpResponse::Ok().json(Count {
+                red: red,
+                green: green,
+                blue: blue,
+            })
         }
         Err(e) => {
             println!("Error: {}", e);

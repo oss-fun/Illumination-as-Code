@@ -11,6 +11,12 @@ pub struct Chroma {
     pub green: u8,
     pub blue: u8,
 }
+#[derive(Serialize, Deserialize)]
+pub struct Count {
+    pub red: usize,
+    pub green: usize,
+    pub blue: usize,
+}
 
 pub fn set_rnd_color_chroma3() -> Chroma {
     let mut rng = thread_rng();
@@ -132,6 +138,7 @@ pub async fn vm_up(chroma_answer: &Chroma, url: &str) -> Result<String, reqwest:
 }
 
 pub async fn start_receive_data(compute_time: usize, url: &str) -> Result<String, reqwest::Error> {
+    println!("Start receive data!");
     let client = Client::new();
     let res = client
         .post(url.to_string() + "/start")
@@ -148,5 +155,10 @@ pub async fn get_chroma(compute_time: usize, url: &str) -> Result<Chroma, reqwes
         .body(compute_time.to_string())
         .send()
         .await?;
-    Ok(res.json().await?)
+    let count: Count = res.json().await?;
+    Ok(Chroma {
+        red: parse_chroma(count.red.to_string()).unwrap(),
+        green: parse_chroma(count.green.to_string()).unwrap(),
+        blue: parse_chroma(count.blue.to_string()).unwrap(),
+    })
 }
