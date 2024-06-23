@@ -48,6 +48,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 }
             }
 
+            println!("vm up...");
             // vm up
             match vm_up(&chroma_answer, server_url).await {
                 Ok(res) => {

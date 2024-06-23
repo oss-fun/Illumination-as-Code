@@ -19,6 +19,7 @@ pub struct Count {
 }
 
 async fn vm_up(state: web::Data<AppState>, body: web::Json<Count>) -> impl Responder {
+    println!("Received: {:?}", body);
     let count = body.into_inner();
 
     let cpu_values = format!("[\"{}\", \"{}\", \"{}\"]", count.red, count.green, count.blue);
