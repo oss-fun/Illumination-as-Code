@@ -12,7 +12,7 @@ async fn main() -> Result<(), reqwest::Error> {
     init_thread_pool(num_threads);
 
     // pi
-    let num_rects: i64 = 2 * 1_000 * 1_000 * 1_000;
+    let num_rects: i64 = 1 * 1_000 * 1_000 * 100;
     let width: f64 = 1.0 / num_rects as f64;
 
     // test local server
