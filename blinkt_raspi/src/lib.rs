@@ -151,7 +151,7 @@ fn chroma_to_count(value: u8) -> usize {
 pub async fn vm_up(chroma_answer: &Chroma, url: &str) -> Result<String, reqwest::Error> {
     let client = Client::new();
     let res = client
-        .post(url.to_string() + "/vm_up")
+        .post(url.to_string() + "/vm-up")
         .json(&chroma_answer.to_count())
         .send()
         .await?;
