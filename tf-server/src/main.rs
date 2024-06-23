@@ -1,6 +1,8 @@
 use actix_rt::time::sleep;
 use actix_web::{web, App, HttpServer, Responder};
+use serde::{Deserialize, Serialize};
 use std::process::Command;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 #[derive(Clone)]
@@ -16,15 +18,16 @@ pub struct Count {
     pub blue: usize,
 }
 
-async fn vm_up(state: web::Data<AppState>, body: String) -> impl Responder {
+async fn vm_up(state: web::Data<AppState>, body: web::Json<Count>) -> impl Responder {
     let count = body.into_inner();
 
     let cpu_values = format!("[\"{}\", \"{}\", \"{}\"]", count.red, count.green, count.blue);
+
     // コマンドを非同期で実行
-    let output = actix_rt::task::spawn_blocking(|| {
+    let output = actix_rt::task::spawn_blocking(move || {
         Command::new("sh")
             .arg("-c")
-            .arg(format!("terraform apply -auto-approve -var 'cpu={}'",cpu_values))
+            .arg(format!("terraform apply -auto-approve -var 'cpu={}'", cpu_values))
             .output()
             .expect("failed to execute process")
     })
@@ -47,8 +50,17 @@ async fn vm_up(state: web::Data<AppState>, body: String) -> impl Responder {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    HttpServer::new(|| App::new().route("/vm-up", web::get().to(vm_up)))
-        .bind("0.0.0.0:8080")?
-        .run()
-        .await
+    let state = AppState {
+        data: Arc::new(Mutex::new(String::new())),
+        receiving: Arc::new(Mutex::new(false)),
+    };
+
+    HttpServer::new(move || {
+        App::new()
+            .app_data(web::Data::new(state.clone()))
+            .route("/vm-up", web::post().to(vm_up))
+    })
+    .bind("0.0.0.0:8080")?
+    .run()
+    .await
 }
