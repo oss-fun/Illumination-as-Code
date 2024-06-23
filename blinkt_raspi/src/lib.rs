@@ -4,6 +4,7 @@ use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::io::{self, Write};
+use std::usize;
 
 #[derive(Serialize, Deserialize)]
 pub struct Chroma {
@@ -127,11 +128,31 @@ fn parse_chroma(input: String) -> Result<u8, Box<dyn Error>> {
     }
 }
 
+impl Chroma {
+    pub fn to_count(&self) -> Count {
+        Count {
+            red: chroma_to_count(self.red),
+            green: chroma_to_count(self.green),
+            blue: chroma_to_count(self.blue),
+        }
+    }
+}
+
+fn chroma_to_count(value: u8) -> usize {
+    match value {
+        0 => 0,
+        85 => 1,
+        170 => 2,
+        255 => 3,
+        _ => 0,
+    }
+}
+
 pub async fn vm_up(chroma_answer: &Chroma, url: &str) -> Result<String, reqwest::Error> {
     let client = Client::new();
     let res = client
         .post(url.to_string() + "/vm_up")
-        .json(&chroma_answer)
+        .json(&chroma_answer.to_count())
         .send()
         .await?;
     Ok(res.text().await?)
