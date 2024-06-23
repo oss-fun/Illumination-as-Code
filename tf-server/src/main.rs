@@ -27,7 +27,7 @@ async fn vm_up(state: web::Data<AppState>, body: web::Json<Count>) -> impl Respo
     let output = actix_rt::task::spawn_blocking(move || {
         Command::new("sh")
             .arg("-c")
-            .arg(format!("terraform apply -auto-approve -var 'cpu={}'", cpu_values))
+            .arg(format!("cd ~/illumination-as-code/tf-kvm && terraform apply -auto-approve -var 'cpu={}'", cpu_values))
             .output()
             .expect("failed to execute process")
     })
