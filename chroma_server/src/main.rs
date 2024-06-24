@@ -139,7 +139,7 @@ async fn main() -> std::io::Result<()> {
             .route("/get-chroma", web::post().to(get_chroma))
             .route("/get-chroma-static", web::post().to(get_chroma_static))
             .route("/vm_up", web::post().to(vm_up))
-            .route("/",web::post().to(root))
+            .route("/",web::get().to(root))
     })
     .bind("0.0.0.0:8080")?
     .run()
