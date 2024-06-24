@@ -2,11 +2,11 @@ use rayon::prelude::*;
 use rayon::ThreadPoolBuilder;
 use reqwest::Client;
 
-pub fn parse_args(args: &[String]) -> (usize, &str) {
+pub fn parse_args(args: &[String]) -> (usize, &str, &str) {
     let num_threads: usize = args[1].parse().expect("error");
     let color: &str = &args[2];
-    let target: &str = &args[3]
-    (num_threads, color)
+    let target: &str = &args[3];
+    (num_threads, color,target)
 }
 
 pub fn init_thread_pool(num_threads: usize) {
