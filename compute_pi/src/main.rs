@@ -6,7 +6,7 @@ use std::io::{self, Write};
 async fn main() -> Result<(), reqwest::Error> {
     // args
     let args: Vec<String> = env::args().collect();
-    let (num_threads, color) = parse_args(&args);
+    let (num_threads, color ,target) = parse_args(&args);
 
     // rayon
     init_thread_pool(num_threads);
@@ -16,7 +16,7 @@ async fn main() -> Result<(), reqwest::Error> {
     let width: f64 = 1.0 / num_rects as f64;
 
     // test local server
-    let url: &str = "http://192.168.22.5:8080";
+    let url: &str = format!("http://192.168.%d.3:8080",target);
 
     loop {
         let area: f64 = compute_pi(num_rects, width);

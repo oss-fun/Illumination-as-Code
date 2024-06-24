@@ -61,8 +61,8 @@ resource "libvirt_cloudinit_disk" "commoninit" {
   ethernets:
     ens3:
       addresses:
-      - "192.168.22.${count.index+2}/24"
-      gateway4: 192.168.22.1
+      - "192.168.${count.index+2}.22/24"
+      gateway4: 192.168.${count.index+2}.1
       nameservers:
         addresses:
           - 8.8.8.8
@@ -82,7 +82,7 @@ resource "libvirt_domain" "vm" {
 
   network_interface {
     bridge = "br${count.index+2}"
-    addresses = ["192.168.22.${count.index+2}"]
+    addresses = ["192.168.${count.index+2}.22"]
   }
 
   cloudinit = element(libvirt_cloudinit_disk.commoninit.*.id,count.index)
@@ -106,7 +106,7 @@ resource "libvirt_domain" "vm" {
       type        = "ssh"
       user        = "ubuntu"
       private_key = file("id_ed25519")
-      host        = format("192.168.22.%d", count.index + 2)
+      host        = format("192.168.%d.22", count.index + 2)
     }
   }
 
@@ -117,7 +117,7 @@ resource "libvirt_domain" "vm" {
       type        = "ssh"
       user        = "ubuntu"
       private_key = file("id_ed25519")
-      host        = format("192.168.22.%d", count.index + 2)
+      host        = format("192.168.%d.22", count.index + 2)
     }
   }
   provisioner "remote-exec" {
@@ -131,7 +131,7 @@ resource "libvirt_domain" "vm" {
       type        = "ssh"
     user        = "ubuntu"
       private_key = file("id_ed25519")
-      host        = format("192.168.22.%d", count.index + 2)
+      host        = format("192.168.%d.22", count.index + 2)
     }
   }
 }
