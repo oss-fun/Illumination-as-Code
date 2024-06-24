@@ -72,7 +72,7 @@ resource "libvirt_cloudinit_disk" "commoninit" {
 
 resource "libvirt_domain" "vm" {
   count = var.machine_num
-  name   = "var.hostname-${count.index+2}"
+  name   = "${var.hostname}-${count.index+2}"
   memory = 2048
   vcpu   = var.cpu[count.index]
 

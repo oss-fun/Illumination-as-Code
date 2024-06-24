@@ -120,6 +120,10 @@ async fn vm_up(_state: web::Data<AppState>, body: String) -> impl Responder {
     }
 }
 
+async fn root()-> impl Responder{
+    HttpResponse::Ok("Hello World!")
+}
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let data = AppState {
