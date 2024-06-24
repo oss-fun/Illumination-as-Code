@@ -14,7 +14,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     rt.block_on(async {
         let mut blinkt = Blinkt::new()?;
         let local_url = "http://127.0.0.1:8080";
-        let server_url = "http://192.168.1.1:8080";
+        let server_url = "http://192.168.1.2:8080";
         let question_pins: Vec<usize> = vec![1, 3, 5, 7];
         let answer_pins: Vec<usize> = vec![0, 2, 4, 6];
         let mut chroma_question: Chroma;
