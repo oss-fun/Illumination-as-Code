@@ -121,7 +121,7 @@ async fn vm_up(_state: web::Data<AppState>, body: String) -> impl Responder {
 }
 
 async fn root()-> impl Responder{
-    HttpResponse::Ok("Hello World!")
+    HttpResponse::Ok().body("Hello World!")
 }
 
 #[actix_web::main]
@@ -139,6 +139,7 @@ async fn main() -> std::io::Result<()> {
             .route("/get-chroma", web::post().to(get_chroma))
             .route("/get-chroma-static", web::post().to(get_chroma_static))
             .route("/vm_up", web::post().to(vm_up))
+            .route("/",web::post().to(root))
     })
     .bind("0.0.0.0:8080")?
     .run()
