@@ -27,6 +27,7 @@ async fn vm_up(state: web::Data<AppState>, body: web::Json<Count>) -> impl Respo
     // コマンドを非同期で実行
     let output = actix_rt::task::spawn_blocking(move || {
         Command::new("sh")
+            .current_dir("/home/ubuntu/illumination-as-code/tf-kvm")
             .arg("-c")
             .arg(format!("cd ~/illumination-as-code/tf-kvm && terraform apply -auto-approve -var 'cpu={}'", cpu_values))
             .spawn()
@@ -44,7 +45,7 @@ async fn vm_up(state: web::Data<AppState>, body: web::Json<Count>) -> impl Respo
     }
     */
     // 10秒待機
-    sleep(Duration::from_secs(10)).await;
+    sleep(Duration::from_secs(70)).await;
 
     // レスポンスを返す
     format!("Command executed. Waiting period over.")
