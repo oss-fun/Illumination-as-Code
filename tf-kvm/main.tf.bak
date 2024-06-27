@@ -2,7 +2,7 @@ variable "hostname" { default = "tf-vm" }
 variable "domain" { default = "illumination-as-code.com" }
 variable "machine_num" { default = 3 }
 variable "cpu" {
-  type    = list(number)
+  type    = tuple([number, number, number])
   default = [1, 1, 1]
 }
 
@@ -34,8 +34,8 @@ resource "libvirt_cloudinit_disk" "commoninit" {
   pool           = "default"
   user_data      = <<-EOF
   #cloud-config
-  hostname: ${var.hostname}${count.index}
-  fqdn: ${var.hostname}${count.index}.${var.domain}
+  hostname: ${var.hostname}
+  fqdn: ${var.hostname}.${var.domain}
   manage_etc_hosts: true
   users:
     - name: ubuntu
@@ -71,22 +71,21 @@ resource "libvirt_cloudinit_disk" "commoninit" {
 }
 
 resource "libvirt_domain" "vm" {
-  for_each = { for idx, cpu in var.cpu : idx => cpu if cpu > 0 }
-
-  name   = "${var.hostname}-${each.key+1}"
+  count = var.machine_num
+  name   = "${var.hostname}-${count.index+2}"
   memory = 2048
-  vcpu   = each.value
+  vcpu   = var.cpu[count.index]
 
   disk {
-    volume_id = libvirt_volume.os_image[each.key].id
+    volume_id = element(libvirt_volume.os_image.*.id,count.index)
   }
 
   network_interface {
-    bridge = "br${each.key+2}"
-    addresses = ["192.168.${each.key+2}.22"]
+    bridge = "br${count.index+2}"
+    addresses = ["192.168.${count.index+2}.22"]
   }
 
-  cloudinit = libvirt_cloudinit_disk.commoninit[each.key].id
+  cloudinit = element(libvirt_cloudinit_disk.commoninit.*.id,count.index)
 
   console {
     type        = "pty"
@@ -99,7 +98,7 @@ resource "libvirt_domain" "vm" {
     listen_type = "address"
     autoport    = "true"
   }
-
+  
   provisioner "file" {
     source      = "compute/compute_pi"
     destination = "/tmp/compute_pi"
@@ -107,34 +106,32 @@ resource "libvirt_domain" "vm" {
       type        = "ssh"
       user        = "ubuntu"
       private_key = file("id_ed25519")
-      host        = format("192.168.%d.22", each.key + 2)
+      host        = format("192.168.%d.22", count.index + 2)
     }
   }
 
   provisioner "file" {
-    source      = format("compute/pi%d.service", each.key + 1)
-    destination = format("/tmp/pi%d.service", each.key + 1)
+    source      = format("compute/pi%d.service", count.index + 1)
+    destination = format("/tmp/pi%d.service", count.index + 1)
     connection {
       type        = "ssh"
       user        = "ubuntu"
       private_key = file("id_ed25519")
-      host        = format("192.168.%d.22", each.key + 2)
+      host        = format("192.168.%d.22", count.index + 2)
     }
   }
-
   provisioner "remote-exec" {
     inline = [
-      format("sudo mv /tmp/pi%d.service /etc/systemd/system/pi%d.service", each.key + 1, each.key + 1),
+      "${format("sudo mv /tmp/pi%d.service /etc/systemd/system/pi%d.service", count.index + 1, count.index + 1)}",
       "sudo chmod 777 /tmp/compute_pi",
       "sudo systemctl daemon-reload",
-      format("sudo systemctl start pi%d.service", each.key + 1),
+      "${format("sudo systemctl start pi%d.service", count.index + 1)}",
     ]
     connection {
       type        = "ssh"
-      user        = "ubuntu"
+    user        = "ubuntu"
       private_key = file("id_ed25519")
-      host        = format("192.168.%d.22", each.key + 2)
+      host        = format("192.168.%d.22", count.index + 2)
     }
   }
 }
-
